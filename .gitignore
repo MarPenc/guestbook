@@ -12,3 +12,6 @@ profiles.clj
 /.env
 .nrepl-port
 /log
+guestbook*.db
+.rebel_readline_history
+figwheel_server.log

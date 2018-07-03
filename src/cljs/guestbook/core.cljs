@@ -32,7 +32,7 @@
      :params @fields
      :handler #(do
                  (reset! errors nil)
-                 (swap! messages conj (assoc @fields :timestamp (js/date.))))
+                 (swap! messages conj (assoc @fields :timestamp (js/Date.))))
      :error-handler #(do
                        (.error js/console (str "error: " %))
                        (reset! errors (get-in % [:response :errors])))}))
