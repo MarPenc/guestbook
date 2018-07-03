@@ -1,6 +1,7 @@
 (ns guestbook.core
   (:require [reagent.core :as r :refer [atom]]
-            [ajax.core :refer [GET POST]]))
+            [ajax.core :refer [GET POST]]
+            [clojure.string :refer [join]]))
 
 (defn message-list [messages]
   [:ul.content
@@ -39,7 +40,7 @@
 
 (defn errors-component [errors id]
   (when-let [error (id @errors)]
-    [:div.alert.alert-danger (clojure.string/join error)]))
+    [:div.alert.alert-danger (join error)]))
 
 (defn message-form [messages]
   (let [fields (atom {})
