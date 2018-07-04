@@ -15,3 +15,4 @@ profiles.clj
 guestbook*.db
 .rebel_readline_history
 figwheel_server.log
+.DS_Store

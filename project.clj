@@ -29,7 +29,8 @@
                  [selmer "1.11.7"]
                  [cheshire "5.6.3"]
                  [reagent "0.5.1"]
-                 [cljs-ajax "0.5.2"]]
+                 [cljs-ajax "0.5.2"]
+                 [com.taoensso/sente "1.8.0"]]
 
   :min-lein-version "2.0.0"
 
@@ -40,7 +41,8 @@
   :main ^:skip-aot guestbook.core
 
   :plugins [[lein-cljsbuild "1.1.7"]
-            [lein-immutant "2.1.0"]]
+            [lein-immutant "2.1.0"]
+            [lein-marginalia "0.9.1"]]
   :clean-targets ^{:protect false}
   [:target-path
    [:cljsbuild :builds :app :compiler :output-dir]

@@ -1,9 +1,8 @@
 (ns guestbook.handler
-  (:require 
-            [guestbook.layout :refer [error-page]]
+  (:require [guestbook.layout :refer [error-page]]
             [guestbook.routes.home :refer [home-routes]]
+            [guestbook.routes.ws :refer [websocket-routes]]
             [compojure.core :refer [routes wrap-routes]]
-            [ring.util.http-response :as response]
             [guestbook.middleware :as middleware]
             [compojure.route :as route]
             [guestbook.env :refer [defaults]]
@@ -16,12 +15,12 @@
 (mount/defstate app
   :start
   (middleware/wrap-base
-    (routes
+    (routes ;; (defn routes [& handlers] ...)
+      websocket-routes
       (-> #'home-routes
           (wrap-routes middleware/wrap-csrf)
           (wrap-routes middleware/wrap-formats))
-          (route/not-found
-             (:body
-               (error-page {:status 404
-                            :title "page not found"}))))))
-
+      (route/not-found
+         (:body
+           (error-page {:status 404
+                        :title "page not found"}))))))

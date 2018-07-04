@@ -1,7 +1,7 @@
 (ns guestbook.core
   (:require [reagent.core :as r :refer [atom]]
-            [ajax.core :refer [GET POST]]
-            [clojure.string :refer [join]]))
+            [ajax.core :refer [GET]]
+            [guestbook.ws :as ws]))
 
 (defn message-list [messages]
   [:ul.content
@@ -26,65 +26,58 @@
     {:headers {"Accept" "application/transit+json"}
      :handler #(reset! messages (vec %))}))
 
-(defn send-message! [fields errors messages]
-  (POST "/message"
-    {:headers {"Accept" "application/transit+json"
-               "x-csrf-token" (.-value (.getElementById js/document "token"))}
-     :params @fields
-     :handler #(do
-                 (reset! errors nil)
-                 (swap! messages conj (assoc @fields :timestamp (js/Date.))))
-     :error-handler #(do
-                       (.error js/console (str "error: " %))
-                       (reset! errors (get-in % [:response :errors])))}))
-
 (defn errors-component [errors id]
   (when-let [error (id @errors)]
-    [:div.alert.alert-danger (join error)]))
+    [:div.alert.alert-danger (clojure.string/join error)]))
 
-(defn message-form [messages]
-  (let [fields (atom {})
-        errors (atom nil)]
-    (fn []
-      [:div.content
-       [errors-component errors :server-error]
-       [:div.form-group
+(defn response-handler [messages fields errors]
+  (fn [{[_ message] :?data}]
+    (if-let [response-errors (:errors message)]
+      (reset! errors response-errors)
+      (do
+        (reset! errors nil)
+        (reset! fields nil)
+        (swap! messages conj message)))))
 
-        [:p
-         [:input.form-control
-          {:type :text
-           :name :name
-           :placeholder "Your Name"
-           :value (:name @fields)
-           :on-change #(swap! fields assoc :name (-> % .-target .-value))}]
-         [errors-component errors :name]]
-
-        [:p
-         [:textarea.form-control
-          {:rows 5
-           :cols 50
-           :placeholder "What's going on?"
-           :name :message
-           :value (:message @fields)
-           :on-change #(swap! fields assoc :message (-> % .-target .-value))}]
-         [errors-component errors :message]]
-
-        [:input.btn.btn-info.pull-right.btn-comment
-         {:type :submit
-          :on-click #(send-message! fields errors messages)
-          :value "Comment"}]]])))
+(defn message-form [fields errors]
+  [:div.content
+   [:div.form-group
+    [errors-component errors :server-error]
+    [:p
+     [:input.form-control
+      {:type :text
+       :placeholder "Your Name"
+       :value (:name @fields)
+       :on-change #(swap! fields assoc :name (-> % .-target .-value))}]
+     [errors-component errors :name]]
+    [:p
+     [:textarea.form-control
+      {:rows 5
+       :cols 50
+       :placeholder "What's going on?"
+       :value (:message @fields)
+       :on-change #(swap! fields assoc :message (-> % .-target .-value))}]
+     [errors-component errors :message]]
+    [:input.btn.btn-info.pull-right.btn-comment
+     {:type :submit
+      :on-click #(ws/send-message! [:guestbook/add-message @fields] 8000)
+      :value "Comment"}]]])
 
 (defn home []
-  (let [messages (atom nil)]
+  (let [messages (atom nil)
+        errors   (atom nil)
+        fields   (atom nil)]
+    (ws/start-router! (response-handler messages fields errors))
     (get-messages messages)
     (fn []
       [:div
         [:h2 "Shout!"]
         [:p "your personal shoutbox"]
         [:div.row
-          [:div.col-sm-5
-            [message-form messages]]
-          [:div.col-sm-5
+          [:div.span12
+            [message-form fields errors]]]
+        [:div.row
+          [:div.span12
             [message-list messages]]]])))
 
 (r/render [home]
